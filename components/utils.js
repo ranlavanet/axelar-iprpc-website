@@ -1,10 +1,10 @@
-const AxelarTestnetContract = "0x2b102B5FCdADDB4B9F4bf86e29E42F2D46624c10"
+const AxelarTestnetContract = "0x9245399aa2f0Db7721e3A39fB972016F140e1944"
 const AxelarMainnetContract = "-"
 const AxelarTestnetChainID = 421613
 const AxelarMainnetChainID = 0
 const AxelarTestnetChainName = "Arbitrum Goerli"
 const AxelarMainnetChainName = "Arbitrum One"
-const AxelarTestnetChainRPC = "https://endpoints.omniatech.io/v1/arbitrum/goerli/public"
+const AxelarTestnetChainRPC = "https://goerli-rollup.arbitrum.io/rpc"
 const AxelarMainnetChainRPC = "-"
 const AxelarTestnetChainSymbol = "AXL"
 const AxelarMainnetChainSymbol = "-"
@@ -26,7 +26,7 @@ export const ERC20TokenDecimal = TokenDecimal;
 export async function getBalance(contract, walletAddress) {
     let balance = await contract.methods.balanceOf(walletAddress).call();
     return balance;
-  }
+}
   
 export function convertERCBalanceToDecimal(web3, balanceIn) {
     if (balanceIn == "trying to fetch contract balance") { 
