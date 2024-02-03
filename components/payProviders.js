@@ -95,49 +95,80 @@ function parseCsvFields(uploadedData, amountToPay) {
     const paymentListOfProviders = [];
     const gatherInfo = [];
 
-    //
     // Extract data from csv
-    let totalCu = 0;
+    let totalPercentage = 0;
+    let alertOnce = false;
     for (let i of uploadedData) {
-        let address = i['Wallet Address']
-        let totalCUs = i['Percentage']
-        if (!address || !totalCUs) {
-            alert("couldn't find one of the fields 'Wallet Address' and 'Percentage'");
-            return
-        }
-        if (totalCUs == "") {
+        if (i == "") {
             continue;
         }
-        if (Number(totalCUs) == 0) {
+        let address = i['Wallet Address']
+        let percentage = i['Percentage']
+        if (address == "" || percentage == "") {
+            if (!alertOnce) {
+                alertOnce = true;
+                alert("some fields are empty, skipping");
+            }
+            continue;
+        }
+        if (!address || !percentage) {
+            console.log(i)
+            console.log(address, percentage)
+            alert("couldn't find one of the fields 'Wallet Address' and 'Percentage'");
+            continue;
+        }
+        if (percentage == "") {
+            continue;
+        }
+        if (percentage.includes("%")) {
+            percentage = percentage.replace("%", "")
+        }
+        if (Number(percentage) == 0) {
             continue;
         }
         try {
-            totalCu += Number(totalCUs)
+            let p = Number(percentage)
+            console.log("adding percentage", p)
+            if (p == NaN || p <= 0) {
+                continue;
+            }
+            totalPercentage += Number(percentage)
         } catch (e) {
             console.log("failed converting one of the elements", e)
             continue;
         }
-        gatherInfo.push({ address: address, totalCUs: totalCUs })
+        gatherInfo.push({ address: address, percentage: percentage })
     }
-    totalCu = totalCu.toFixed(2)
+    console.log("totalPercentage before fixed", totalPercentage)
+    totalPercentage = totalPercentage.toFixed(2)
+    if (totalPercentage == NaN) {
+        return paymentListOfProviders;
+    }
+    console.log("totalPercentage", totalPercentage)
+    if (Math.round(totalPercentage) != 100) {
+        alert("totalPercentage != 100%, " + String(totalPercentage))
+    }
     //
     // Calc payment per provider
-    let totalPayWei = 0n
+    let totalPay = 0n
     try {
         // totalPayWei = BigInt(Web3.utils.toWei(String(amountToPay), 'mwei'))// BigInt(String(amountToPay))
-        totalPayWei = BigInt(String(amountToPay))
+        totalPay = BigInt(String(amountToPay))
     } catch(e) {}
     let totalCoinsSending = 0n
+    
     for (let i of gatherInfo) {
-        const value = (totalPayWei * 10000n) / BigInt(Math.round((totalCu / i.totalCUs) * 10000));
+        let value = (totalPay * 100000n) / BigInt(Math.floor((totalPercentage / i.percentage) * 100000));
+        const reduction = (value * BigInt(1)) / BigInt(10000); // 1/10000 represents 0.01%
+        value = value - reduction; // reducing from result to not overflow.
         console.log(value)
         if (value == 0) {
             continue
         }
         console.log(
-            "i.totalCus", i.totalCUs,
-            "totalCu", totalCu,
-            "totalPayWei", totalPayWei,
+            "i.percentage", i.percentage,
+            "totalPercentage", totalPercentage,
+            "totalPay", totalPay,
             "value", value,
         )
 
@@ -148,9 +179,9 @@ function parseCsvFields(uploadedData, amountToPay) {
         })
     }
 
-    if (totalCoinsSending > totalPayWei) {
-        console.log("totalCoinsSending", totalCoinsSending, "totalPayWei", totalPayWei)
-        alert("totalCoinsSending > totalPayWei")
+    console.log("totalCoinsSending", totalCoinsSending, "totalPay", totalPay)
+    if (totalCoinsSending > totalPay) {
+        alert("totalCoinsSending > totalPay")
         return null;
     }
 
